@@ -1,1 +1,43 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>HeinzeSwift</title><description>A description of HeinzeSwift</description><link>https://cjheinze.github.io</link><language>en</language><lastBuildDate>Wed, 31 May 2023 10:56:25 +0200</lastBuildDate><pubDate>Wed, 31 May 2023 10:56:25 +0200</pubDate><ttl>250</ttl><atom:link href="https://cjheinze.github.io/feed.rss" rel="self" type="application/rss+xml"/><item><guid isPermaLink="true">https://cjheinze.github.io/posts/first-post</guid><title>My first post</title><description>A description of my first post.</description><link>https://cjheinze.github.io/posts/first-post</link><pubDate>Wed, 31 May 2023 10:52:00 +0200</pubDate><content:encoded><![CDATA[<h1>My first post</h1><p>My first post's text.</p>]]></content:encoded></item></channel></rss>
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>CJ Swift</title><description>A description of HeinzeSwift</description><link>https://cjheinze.github.io</link><language>en</language><lastBuildDate>Thu, 6 Jul 2023 13:46:07 +0200</lastBuildDate><pubDate>Thu, 6 Jul 2023 13:46:07 +0200</pubDate><ttl>250</ttl><atom:link href="https://cjheinze.github.io/feed.rss" rel="self" type="application/rss+xml"/><item><guid isPermaLink="true">https://cjheinze.github.io/posts/first-post</guid><title>any vs some</title><description>A description of my first post.</description><link>https://cjheinze.github.io/posts/first-post</link><pubDate>Wed, 31 May 2023 10:52:00 +0200</pubDate><content:encoded><![CDATA[<h1><code>any</code> vs <code>some</code></h1><p>So I've been fighting a lot with generics and the difference between <code>any</code> and <code>some</code> . Reading <a href="https://github.com/apple/swift-evolution/blob/main/proposals/0244-opaque-result-types.md">the proposal</a> for opaque return types helped me understand it a little bit better. But TL;DR: <code>any</code> should generally be avoided since it can't really be optimized by the compiler. The alternative is to constrain it with a generic</p><pre><code>protocol ProtA { ... }
+
+func doSomething(_ foo: any ProtA) { ... } // any can be omitted here until Swift 6 when it becomes requred 
+func doSomethingBetter&lt;T: ProtA&gt;(_ foo: T) {} // Can be compiler optimized
+func doSomethingBetter(_ foo: some ProtA) {} // Equivalent to line above
+</code></pre><p>As for <code>some</code>, it works almost in the opposite way to <code>any</code> . While a function that return an <code>any</code> of something can return anything that implements that something, a method that returns <code>some</code> of something is always required to return the same concrete type.</p><pre><code class="language-swift">struct A: ProtA {...}
+struct B: ProtA {...}
+func getAnyThing() -&gt; any ProtA { // All good
+    if someCondition {
+        return A() // All good
+    else {
+        return B() // All good
+    }
+}
+
+func getSomeThing() -&gt; some ProtA { // Will generate a compile error since the method can return different types.
+    if someCondition {
+        return A() 
+    else {
+        return B() 
+    }
+}
+</code></pre><p>What <code>some</code> is good for however however is mask generics from concrete types.</p><pre><code>protocol Shape { ... }
+struct Union&lt;A: Shape, B: Shape&gt;: Shape {
+  var a: A, b: B
+  // ...
+}
+struct Transformed&lt;S: Shape&gt;: Shape {
+  var shape: S
+  var transform: Matrix3x3
+  // ...
+}
+
+struct EightPointedStar: GameObject {
+  var badShape: Union&lt;Rectangle, Transformed&lt;Rectangle&gt;&gt; { // Eww
+    return Union(Rectangle(), Transformed(Rectangle(), by: .fortyFiveDegrees)
+  }
+
+  var goodShape: some Shape { // Nice!
+    return Union(Rectangle(), Transformed(Rectangle(), by: .fortyFiveDegrees)
+  }
+}
+</code></pre><p>SwiftUI uses this a lot since it has a lot of hidden views that we don't interact directly with and don't need to know about (like in <a href="https://developer.apple.com/documentation/swiftui/viewbuilder">ViewBuilder</a>).</p>]]></content:encoded></item></channel></rss>

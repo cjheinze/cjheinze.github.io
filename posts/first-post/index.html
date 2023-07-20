@@ -1,1 +1,43 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta property="og:site_name" content="HeinzeSwift"/><link rel="canonical" href="https://cjheinze.github.io/posts/first-post"/><meta name="twitter:url" content="https://cjheinze.github.io/posts/first-post"/><meta property="og:url" content="https://cjheinze.github.io/posts/first-post"/><title>My first post | HeinzeSwift</title><meta name="twitter:title" content="My first post | HeinzeSwift"/><meta property="og:title" content="My first post | HeinzeSwift"/><meta name="description" content="A description of my first post."/><meta name="twitter:description" content="A description of my first post."/><meta property="og:description" content="A description of my first post."/><meta name="twitter:card" content="summary"/><link rel="stylesheet" href="/styles.css" type="text/css"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><link rel="shortcut icon" href="/images/favicon.png" type="image/png"/><link rel="alternate" href="/feed.rss" type="application/rss+xml" title="Subscribe to HeinzeSwift"/></head><body class="item-page"><header><div class="wrapper"><a href="/" class="site-name">HeinzeSwift</a></div></header><div class="wrapper"><article><div class="content"><h1>My first post</h1><p>My first post's text.</p></div><span>Tagged with: </span><ul class="tag-list"><li><a href="/tags/first">first</a></li><li><a href="/tags/article">article</a></li></ul></article></div><footer><p>Generated using <a href="https://github.com/johnsundell/publish">Publish</a></p><p><a href="/feed.rss">RSS feed</a></p></footer></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta property="og:site_name" content="CJ Swift"/><link rel="canonical" href="https://cjheinze.github.io/posts/first-post"/><meta name="twitter:url" content="https://cjheinze.github.io/posts/first-post"/><meta property="og:url" content="https://cjheinze.github.io/posts/first-post"/><title>any vs some | CJ Swift</title><meta name="twitter:title" content="any vs some | CJ Swift"/><meta property="og:title" content="any vs some | CJ Swift"/><meta name="description" content="Exploring the difference between `any` and `some`."/><meta name="twitter:description" content="Exploring the difference between `any` and `some`."/><meta property="og:description" content="Exploring the difference between `any` and `some`."/><meta name="twitter:card" content="summary"/><link rel="stylesheet" href="/styles.css" type="text/css"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><link rel="shortcut icon" href="/images/favicon.png" type="image/png"/><link rel="alternate" href="/feed.rss" type="application/rss+xml" title="Subscribe to CJ Swift"/></head><body class="item-page"><header><div class="wrapper"><a href="/" class="site-name">CJ Swift</a><nav><ul><li><a href="/posts" class="selected">My posts</a></li><li><a href="/about">About</a></li></ul></nav></div></header><div class="wrapper"><article><div class="content"><h1><code>any</code> vs <code>some</code></h1><p>So I've been fighting a lot with generics and the difference between <code>any</code> and <code>some</code> . Reading <a href="https://github.com/apple/swift-evolution/blob/main/proposals/0244-opaque-result-types.md">the proposal</a> for opaque return types helped me understand it a little bit better. But TL;DR: <code>any</code> should generally be avoided since it can't really be optimized by the compiler. The alternative is to constrain it with a generic</p><pre><code><span class="keyword">protocol</span> ProtA { ... }
+
+<span class="keyword">func</span> doSomething(<span class="keyword">_</span> foo: any <span class="type">ProtA</span>) { ... } <span class="comment">// any can be omitted here until Swift 6 when it becomes requred</span> 
+<span class="keyword">func</span> doSomethingBetter&lt;T: <span class="type">ProtA</span>&gt;(<span class="keyword">_</span> foo: <span class="type">T</span>) {} <span class="comment">// Can be compiler optimized</span>
+<span class="keyword">func</span> doSomethingBetter(<span class="keyword">_</span> foo: <span class="keyword">some</span> <span class="type">ProtA</span>) {} <span class="comment">// Equivalent to line above</span>
+</code></pre><p>As for <code>some</code>, it works almost in the opposite way to <code>any</code> . While a function that return an <code>any</code> of something can return anything that implements that something, a method that returns <code>some</code> of something is always required to return the same concrete type.</p><pre><code><span class="keyword">struct</span> A: <span class="type">ProtA</span> {...}
+<span class="keyword">struct</span> B: <span class="type">ProtA</span> {...}
+<span class="keyword">func</span> getAnyThing() -&gt; any <span class="type">ProtA</span> { <span class="comment">// All good</span>
+    <span class="keyword">if</span> someCondition {
+        <span class="keyword">return</span> <span class="type">A</span>() <span class="comment">// All good</span>
+    <span class="keyword">else</span> {
+        <span class="keyword">return</span> <span class="type">B</span>() <span class="comment">// All good</span>
+    }
+}
+
+<span class="keyword">func</span> getSomeThing() -&gt; <span class="keyword">some</span> <span class="type">ProtA</span> { <span class="comment">// Will generate a compile error since the method can return different types.</span>
+    <span class="keyword">if</span> someCondition {
+        <span class="keyword">return</span> <span class="type">A</span>() 
+    <span class="keyword">else</span> {
+        <span class="keyword">return</span> <span class="type">B</span>() 
+    }
+}
+</code></pre><p>What <code>some</code> is good for however however is mask generics from concrete types.</p><pre><code><span class="keyword">protocol</span> Shape { ... }
+<span class="keyword">struct</span> Union&lt;A: <span class="type">Shape</span>, B: <span class="type">Shape</span>&gt;: <span class="type">Shape</span> {
+  <span class="keyword">var</span> a: <span class="type">A</span>, b: <span class="type">B</span>
+  <span class="comment">// ...</span>
+}
+<span class="keyword">struct</span> Transformed&lt;S: <span class="type">Shape</span>&gt;: <span class="type">Shape</span> {
+  <span class="keyword">var</span> shape: <span class="type">S</span>
+  <span class="keyword">var</span> transform: <span class="type">Matrix3x3</span>
+  <span class="comment">// ...</span>
+}
+
+<span class="keyword">struct</span> EightPointedStar: <span class="type">GameObject</span> {
+  <span class="keyword">var</span> badShape: <span class="type">Union</span>&lt;<span class="type">Rectangle</span>, <span class="type">Transformed</span>&lt;<span class="type">Rectangle</span>&gt;&gt; { <span class="comment">// Eww</span>
+    <span class="keyword">return</span> <span class="type">Union</span>(<span class="type">Rectangle</span>(), <span class="type">Transformed</span>(<span class="type">Rectangle</span>(), by: .<span class="dotAccess">fortyFiveDegrees</span>)
+  }
+
+  <span class="keyword">var</span> goodShape: <span class="keyword">some</span> <span class="type">Shape</span> { <span class="comment">// Nice!</span>
+    <span class="keyword">return</span> <span class="type">Union</span>(<span class="type">Rectangle</span>(), <span class="type">Transformed</span>(<span class="type">Rectangle</span>(), by: .<span class="dotAccess">fortyFiveDegrees</span>)
+  }
+}
+</code></pre><p>SwiftUI uses this a lot since it has a lot of hidden views that we don't interact directly with and don't need to know about (like in <a href="https://developer.apple.com/documentation/swiftui/viewbuilder">ViewBuilder</a>).</p></div><span>Tagged with: </span><ul class="tag-list"><li><a href="/tags/generics">Generics</a></li><li><a href="/tags/swift">Swift</a></li></ul></article></div><footer><p>Generated using <a href="https://github.com/johnsundell/publish">Publish</a></p><p><a href="/feed.rss">RSS feed</a></p></footer></body></html>
